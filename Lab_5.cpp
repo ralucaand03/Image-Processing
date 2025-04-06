@@ -31,8 +31,7 @@ Mat_<Vec3b> generate_color(Mat_<int>& labels)
 	}
 	for (int i = 0; i < labels.rows; i++) {
 		for (int j = 0; j < labels.cols; j++) {
-			int label = labels(i, j);
-
+			int label = labels(i, j); 
 			colorImg(i, j) = labelColorVec[label];  
 			
 		}
@@ -47,19 +46,18 @@ void bfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 	int dj4[4] = { 0,-1,0,1 };
 	int label = 0;
 	for (int i = 0; i < img.rows; i++){
-		for (int j = 0; j < img.cols; j++){
-			if (img(i, j) == 0 && labels(i, j) == 0){
-				label++;
-				queue< pair<int, int> > Q;
-				labels(i, j) = label;
-				Q.push(make_pair(i, j));
+		for (int j = 0; j < img.cols; j++){           //for all points P inside
+			if (img(i, j) == 0 && labels(i, j) == 0){ //black and unlabeled
+				label++;                              //new label
+				queue< pair<int, int> > Q;            //create queue of pairs 
+				labels(i, j) = label;                 //label
+				Q.push(make_pair(i, j));              //add in queue
 
-				while (!Q.empty())
+				while (!Q.empty())                    //while queue
 				{
-					pair<int, int> p = Q.front();
-					Q.pop();
-
-					for (int t = 0; t < u; t++) {
+					pair<int, int> p = Q.front();   
+					Q.pop();                          //pop
+					for (int t = 0; t < u; t++) {     //for all neighbours P(ni,nj)
 						int ni, nj;
 						if (u == 8) {
 							ni = p.first + di8[t];
@@ -68,23 +66,21 @@ void bfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 						else {
 							ni = p.first + di4[t];
 							nj = p.second + dj4[t];
-
 						}
-						if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols &&
-							img(ni, nj) == 0 && labels(ni, nj) == 0) {
-							labels(ni, nj) = label;
-							Q.push(pair<int, int>(ni, nj));
+						if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols &&     //P isInside
+							img(ni, nj) == 0 && labels(ni, nj) == 0) {                  //black and unlabeled
+							labels(ni, nj) = label;                                     //label
+							Q.push(pair<int, int>(ni, nj));                             //add in queue
 						}
 
 					}
-				}
+				}                                                                       //loop
 			}
 		}
 	}
 	Mat_<Vec3b> color_result = generate_color(labels);
 	imshow("BFS", color_result);
 	waitKey(0);
-
 } 
 void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
 	int di4[4] = { -1, 0, 1, 0 };
@@ -92,38 +88,44 @@ void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
 	int di8[8] = { -1,-1,-1,0,0,1,1,1 };
 	int dj8[8] = { -1,0,1,-1,1,-1,0,1 };
 	int label = 0;
-	vector<vector<int>> edges(1000);
+	vector<vector<int>> edges(1000);                    //edges
 
 	//First pass
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0 && labels(i, j) == 0) { 
-				vector<int> L;
-				for (int t = 0; t < u; t++) {
-					int ni = (u == 8) ? i + di8[t] : i + di4[t];
-					int nj = (u == 8) ? j + dj8[t] : j + dj4[t];
-					if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols && labels(ni, nj) > 0) {
-						L.push_back(labels(ni, nj));
+			if (img(i, j) == 0 && labels(i, j) == 0) {  //black and unabled
+				vector<int> L;                          //create vector L -> store neighboor labels in L
+				for (int t = 0; t < u; t++) {           //for all neighbours
+					int ni , nj ;
+                    if (u == 8) {
+                        ni = i + di8[t];
+                        nj = j + dj8[t];
+                    }
+                    else {
+                        ni = i + di4[t];
+                        nj = j + dj4[t];
+                    }
+					if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols    //isInside 
+                        && labels(ni, nj) > 0) {                                //label >0
+						L.push_back(labels(ni, nj));                            //-> add in L
 					}
 				}
-				if (L.size() == 0) {
-					label++;
-					labels(i, j) = label;
+				if (L.size() == 0) {        //L empty
+					label++;                //new label
+					labels(i, j) = label;   //label
 				}
 				else {
 					int x = L[0];   
 					for (int i = 1; i < L.size(); i++) {
-						if (L[i] < x) {
-							x = L[i];
+						if (L[i] < x) { 
+							x = L[i];        //x smallest label
 						}
 					}
-					labels(i, j) = x;
-					for (int y = 0; y < L.size(); y++) {
-						if (L[y] != x) {
-							if (x >= edges.size()) edges.resize(x + 1);
-							if (L[y] >= edges.size()) edges.resize(L[y] + 1);
-							edges[x].push_back(L[y]);
-							edges[L[y]].push_back(x);
+					labels(i, j) = x;        //assign smallest label from neighbors
+                    for(int y : L)   {       //for all neighbour labels
+						if (y != x) {        //label != x 
+							edges[x].push_back(y);
+							edges[y].push_back(x);
 						}
 					}
 				}
@@ -135,7 +137,7 @@ void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
 	imshow("First Pass", color_result);
 	waitKey(0);
 
-	// Second pass
+	//Second pass
 	vector<int> newlabels(label + 1, 0);
 	int newlabel = 0;
 
@@ -159,7 +161,6 @@ void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
 			}
 		}
 	}
-
 	// Update the labels matrix
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
@@ -228,30 +229,32 @@ void dfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 	int label = 0;
 
 	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0 && labels(i, j) == 0) {   
-				label++;
-				stack<pair<int, int>> S;
-				labels(i, j) = label;
-				S.push(make_pair(i, j));
+		for (int j = 0; j < img.cols; j++) {             //for all points P inside
+			if (img(i, j) == 0 && labels(i, j) == 0) {   //black and unlabeled
+				label++;                                 //new label
+				stack<pair<int, int>> S;                 //create stack of pairs
+				labels(i, j) = label;                    //label
+				S.push(make_pair(i, j));                 //add in stack
 
-				while (!S.empty()) {
-					pair<int, int> p = S.top();
-					S.pop();
-					int r = p.first;
-					int c = p.second;
-
-					int N = (u == 8) ? 8 : 4;
-					for (int t = 0; t < N; t++) {
-						int ni = (u == 8) ? r + di8[t] : r + di4[t];
-						int nj = (u == 8) ? c + dj8[t] : c + dj4[t];
-
-						if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols &&
-							img(ni, nj) == 0 && labels(ni, nj) == 0) {
-							labels(ni, nj) = label;
-							S.push(make_pair(ni, nj));
+				while (!S.empty()) {                    //while stack
+					pair<int, int> p = S.top();     
+					S.pop();                            //pop
+					for (int t = 0; t < u; t++) {       //for all neighbours P(ni,nj)
+						int ni, nj;
+						if (u == 8) {
+							ni = p.first + di8[t];
+							nj = p.second + dj8[t];
 						}
-					}
+						else {
+							ni = p.first + di4[t];
+							nj = p.second + dj4[t];
+						}
+						if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols &&   //P is inside
+							img(ni, nj) == 0 && labels(ni, nj) == 0) {                //black and unlabeled
+							labels(ni, nj) = label;                                   //label
+							S.push(make_pair(ni, nj));                                //add to stack
+						}
+					}                                                                 //loop
 				}
 				
 			}
