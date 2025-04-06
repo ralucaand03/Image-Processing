@@ -22,10 +22,8 @@ vector<Point> borderTrace(const Mat_<uchar>& img)
 	int dj[8] = { 1,  1,  0, -1, -1, -1, 0, 1 };
 	vector<Point> border;
 	int start_i=-1, start_j=-1;
-	for (int i = 0; i < img.rows && start_i < 0; i++)
-	{
-		for (int j = 0; j < img.cols && start_j < 0; j++)
-		{
+	for (int i = 0; i < img.rows && start_i < 0; i++){
+		for (int j = 0; j < img.cols && start_j < 0; j++){
 			if (img(i, j) == 0)
 			{
 				start_i = i;
@@ -37,87 +35,82 @@ vector<Point> borderTrace(const Mat_<uchar>& img)
 	if (start_i < 0)
 		return border;
 
-	Point P0(start_j, start_i);
+	Point P0(start_j, start_i);             //find the first point P0
 
-	border.push_back(P0);
-	int dir = 7;
-
+	border.push_back(P0);                   //add P0
+	
+    int dir = 7;                            //dir =7
 	bool ok = false;
 	int startDir;
 
 	Point current = P0;
 	Point P1;
 
-	if (dir % 2 == 0) 
+	if (dir % 2 == 0)                       // par -> startDir = (dir + 7) % 8
 		startDir = (dir + 7) % 8;
 	else 
-		startDir = (dir + 6) % 8;
+		startDir = (dir + 6) % 8;          // impar -> startDir = (dir + 6) % 8
 
-	for (int k = 0; k < 8; k++)
-	{
+	for (int k = 0; k < 8; k++){           //for all neighbours
 		int checkDir = (startDir + k) % 8;
 		int ni = start_i + di[checkDir];
 		int nj = start_j + dj[checkDir];
-		if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols)
+		if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols) //is inside 
 		{
-			if (img(ni, nj) == 0) 
+			if (img(ni, nj) == 0)       //is black
 			{
-				P1 = Point(nj, ni);
-				dir = checkDir;
-				ok = true;
+				P1 = Point(nj, ni);     //P1
+				dir = checkDir;         //dir = checkDire
+				ok = true;              //found -> break
 				break;
 			}
 		}
 	}
-	if (!ok) return border;
+	if (!ok) return border;         
 
-	border.push_back(P1);
+	border.push_back(P1);              //add if found
 
 	Point prev = P0;
 	current = P1;
 
-	while (1) {
+	while (1) {                                 //while
 		if (dir % 2 == 0)
 			startDir = (dir + 7) % 8;
 		else
 			startDir = (dir + 6) % 8;
 
-		ok = false;
+		ok = false;                             //startdir and found  false
 
-		for (int k = 0; k < 8; k++)
-		{
+		for (int k = 0; k < 8; k++){            //for all neighbours
 			int checkDir = (startDir + k) % 8;
 			int ni = current.y + di[checkDir];
 			int nj = current.x + dj[checkDir];
-			if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols)
-			{
-				if (img(ni, nj) == 0)
+			if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols){  //is inside
+				if (img(ni, nj) == 0)                                   //is black
 				{
 					prev = current;
 					current = Point(nj, ni);
-					
 					dir = checkDir;
 					ok = true;
 					break;
 				}
 			}
 		}
-		if (current== P0)
+		if (current== P0)                //back to start -> break
 			break;
-		border.push_back(current);
+		border.push_back(current);      //add current
 		if (!ok)  
 			break;
 	}
 	return border;
 
 }
-vector<int> buildChainCode(vector<Point>& border)
-{
+vector<int> buildChainCode(vector<Point>& border){   //which neighbour it is
 	vector<int> chain;
 	for (int i = 0; i + 1 < border.size(); i++)
 	{
-		int dr = border[i + 1].y - border[i].y;
-		int dc = border[i + 1].x - border[i].x;
+		int dr = border[i + 1].y - border[i].y;     //border delta y
+		int dc = border[i + 1].x - border[i].x;                 // x
 		int d = -1;
 		if (dr == 0 && dc == 1) d = 0;
 		else if (dr == -1 && dc == 1) d = 1;
@@ -137,8 +130,7 @@ void printVector(const vector<int>& v)
 		cout << val << " ";
 	cout << "\n";
 }
-vector<int> buildDerivativeCode( vector<int>& chain)
-{
+vector<int> buildDerivativeCode( vector<int>& chain){   
 	vector<int> deriv;
 	for (int i = 0; i + 1 < chain.size(); i++)
 	{
@@ -173,7 +165,6 @@ void reconstructs(Point start, vector<int> chain) {
 		current.y += di[c];
 		current.x += dj[c];
 		img(current.y, current.x) = 0;
-
 	}
 	imshow("Reconstruction", img);
 	waitKey(0);
