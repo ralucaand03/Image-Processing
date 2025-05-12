@@ -105,22 +105,22 @@ void symethric_img() {
 //Lab_2
 void split_channels() {
 	Mat img = imread("Images/Lena_24bits.bmp");
-    if (img.empty()) return;
-    Mat_<uchar> blue(img.rows, img.cols);
-    Mat_<uchar> green(img.rows, img.cols);
-    Mat_<uchar> red(img.rows, img.cols);
-    for (int i = 0; i < img.rows; i++) {
-        for (int j = 0; j < img.cols; j++) {
-            Vec3b pixel = img.at<Vec3b>(i, j);
-            blue(i, j) = pixel[0];
-            green(i, j) = pixel[1];
-            red(i, j) = pixel[2];
-        }
-    }
-    imshow("Blue Channel", blue);
-    imshow("Green Channel", green);
-    imshow("Red Channel", red);
-    waitKey(0);
+	if (img.empty()) return;
+	Mat_<uchar> blue(img.rows, img.cols);
+	Mat_<uchar> green(img.rows, img.cols);
+	Mat_<uchar> red(img.rows, img.cols);
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			Vec3b pixel = img.at<Vec3b>(i, j);
+			blue(i, j) = pixel[0];
+			green(i, j) = pixel[1];
+			red(i, j) = pixel[2];
+		}
+	}
+	imshow("Blue Channel", blue);
+	imshow("Green Channel", green);
+	imshow("Red Channel", red);
+	waitKey(0);
 }
 void convert_to_grayscale() {
 	Mat img = imread("Images/Lena_24bits.bmp");
@@ -133,7 +133,7 @@ void convert_to_grayscale() {
 			uchar G = pixel[1];
 			uchar R = pixel[2];
 			int average = (R + G + B) / 3;
-			grayImg(i, j) = static_cast<uchar>(average);
+			grayImg(i, j) =  (average);
 		}
 	}
 	imshow("Grayscale", grayImg);
@@ -153,20 +153,21 @@ void convert_grayscale_to_BW() {
 		for (int j = 0; j < img.cols; j++) {
 			uchar grayVal = img(i, j);
 			if (grayVal >= thresholdValue) {
-				bwImg(i, j) = 255; 
+				bwImg(i, j) = 255;
 			}
 			else {
-				bwImg(i, j) = 0;  
+				bwImg(i, j) = 0;
 			}
 		}
 	}
-	imshow("Original" , img);
+	imshow("Original", img);
 	imshow("Binary Image ", bwImg);
 	waitKey(0);
 }
 Mat_ <Vec3b>  computeHSV(Mat_<Vec3b>& img) {
-	Mat_<Vec3b> hsvImg (img.rows, img.cols);
-	
+	//if (img.empty()) return;
+	Mat_<Vec3b> hsvImg(img.rows, img.cols);
+
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
 			Vec3b pixel = img.at<Vec3b>(i, j);
@@ -179,7 +180,7 @@ Mat_ <Vec3b>  computeHSV(Mat_<Vec3b>& img) {
 			float C = max_val - min_val;
 			float V = max_val;
 
-			float Sat =0;
+			float Sat = 0;
 			if (V != 0)
 				Sat = C / V;
 
@@ -191,7 +192,7 @@ Mat_ <Vec3b>  computeHSV(Mat_<Vec3b>& img) {
 				else if (max_val == g) {
 					Hue = 120 + 60 * (b - r) / C;
 				}
-				else { 
+				else {
 					Hue = 240 + 60 * (r - g) / C;
 				}
 			}
@@ -200,23 +201,29 @@ Mat_ <Vec3b>  computeHSV(Mat_<Vec3b>& img) {
 			}
 			if (Hue < 0)
 				Hue += 360;
+
 			hsvImg(i, j) = Vec3b(Hue * 180 / 360, Sat * 255, V * 255);
 		}
 	}
+
 	return hsvImg;
+
 }
 bool isInside(Mat img, int i, int j) {
 	return (i >= 0 && i < img.rows && j >= 0 && j < img.cols);
 }
 //Lab3
-void showHistogram(const string& name, vector<int> hist, const int hist_cols,const int hist_height) {
+void showHistogram(const string& name, vector<int> hist, const int hist_cols, const int hist_height) {
+
 	Mat imgHist(hist_height, hist_cols, CV_8UC3, CV_RGB(255, 255, 255));
 	// constructs a white image
+
 	//computes histogram maximum
 	int max_hist = 0;
 	for (int i = 0; i < hist_cols; i++)
 		if (hist[i] > max_hist)
 			max_hist = hist[i];
+
 	double scale = 1.0;
 	scale = (double)hist_height / max_hist;
 	int baseline = hist_height - 1;
@@ -225,6 +232,7 @@ void showHistogram(const string& name, vector<int> hist, const int hist_cols,con
 		Point p2 = Point(x, baseline - cvRound(hist[x] * scale));
 		line(imgHist, p1, p2, CV_RGB(255, 0, 255)); // histogram bins
 		// colored in magenta
+
 	}
 	imshow(name, imgHist);
 }
@@ -237,8 +245,9 @@ vector<int> calc_hist(Mat_ < uchar> img) {
 	}
 	return hist;
 }
-vector<float> compute_pdf(Mat_<uchar> img) { // PDF - Probability Density Function
+vector<float> compute_pdf(Mat_<uchar> img) {
 	vector<float> pdf(256, 0.0f);
+	int totalPixels = img.rows * img.cols;
 	vector<int> hist = calc_hist(img);
 	int total = img.rows * img.cols;
 	for (int i = 0; i < 256; i++) {
@@ -252,9 +261,11 @@ vector<int> hist_custom_bins(Mat_<uchar> img, int m) {
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
 			int g = img(i, j); //gray intensiry lvl DIV size
-			hist[g*m /256]++;
+
+			hist[g * m / 256]++;
 		}
 	}
+
 	return hist;
 }
 Mat_<uchar> multilevel_thresholding(Mat_<uchar> img) {
@@ -286,273 +297,25 @@ Mat_<uchar> multilevel_thresholding(Mat_<uchar> img) {
 			k += WH;
 		}
 	}
-    
-	maxima.push_back(255); 
+	maxima.push_back(255);
 
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
-			int old_pixel = img(i, j);
-			int new_pixel = findClosestHistogramMaxima(maxima, old_pixel);
-			// 
-            //int minDist = abs(pixel - maxima[0]);
-            // int closest = maxima[0];
-			// for (int m = 1; m < maxima.size(); m++) {
-			// 	int dist = abs(pixel - maxima[m]);
-			// 	if (dist < minDist) {
-			// 		closest = maxima[m];
-			// 		minDist = dist;
-			// 	}
-			// }
-			result(i, j) = new_pixel; // new_pixel == closest
+			uchar pixel = img(i, j);
+			int closest = maxima[0];
+			int minDist = abs(pixel - maxima[0]);
+
+			for (int m = 1; m < maxima.size(); m++) {
+				int dist = abs(pixel - maxima[m]);
+				if (dist < minDist) {
+					closest = maxima[m];
+					minDist = dist;
+				}
+			}
+			result(i, j) = closest;
 		}
 	}
 	return result;
-}
-int findClosestHistogramMaxima(vector<int> maxima, int pixel) { 
-	int minDist = abs(pixel - maxima[0]);
-	int closest = maxima[0]; 
-	for (int m = 0; m < maxima.size(); m++) {
-		int currDist = abs(pixel - maxima[m]);
-		if (minDist > currDist) {
-			minDist = currDist;
-			closest = maxima[m];
-		}
-	}
-	return closest;
-}
-void floydSteinbergDithering(Mat_<uchar> img) {
-	vector<int> hist = calc_hist(img);
-	vector<float> pdf = compute_pdf(img);
-
-	int WH = 5;
-	float TH = 0.0003;
-
-	vector<int> maxima; 
-	maxima.push_back(0);
-
-	for (int k = WH; k < 256 - WH; k++) {
-		float sum = 0;
-		for (int i = -WH; i <= WH; i++) {
-			sum += pdf[k + i];
-		}
-		float avg = sum / (2 * WH + 1);
-		bool isLocalMax = true;
-		for (int i = -WH; i <= WH; i++) {
-			if (pdf[k] < pdf[k + i]) {
-				isLocalMax = false;
-				break;
-			}
-		}
-		if (pdf[k] > avg + TH && isLocalMax) {
-			maxima.push_back(k);
-			k += WH;
-		}
-	}
-   
-	maxima.push_back(255);
-
-    //So far same, from here it is different
-	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			int old_pixel = img(i, j);
-			int new_pixel = findClosestHistogramMaxima(maxima, old_pixel);
-			img(i, j) = new_pixel;
-            
-            //from here diff - just the errors
-
-			int error = old_pixel - new_pixel;
-
-			if (isInside(img, i, j + 1))
-				img(i, j + 1) +=  (7 * error) / 16;
-			
-			if (isInside(img, i + 1, j - 1))
-				img(i + 1, j - 1) +=  (3 * error) / 16;
-
-			if (isInside(img, i + 1, j ))
-				img(i + 1, j - 1) += (5 * error) / 16;
-
-			if (isInside(img, i + 1, j + 1))
-				img(i + 1, j + 1) += error / 16;
-		}
-	}
-
-	imshow("Image created with MultiThreading", img);
-	waitKey(0);
-}
-
-void geometrical_features(Mat_<uchar> img) {
-	Mat_<Vec3b> modif_img(img.rows, img.cols);
-	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			modif_img(i, j)[0] = 255;
-			modif_img(i, j)[1] = 255;
-			modif_img(i, j)[2] = 255;
-		}
-	}
-	imshow("Original Image", img);
-	waitKey(0);
-
-	int area = 0;
-	int center_row = 0;
-	int center_col = 0;
-	int perimeter = 0;
-	bool edge = false;
-
-	int* rows = new int[img.rows]();
-	int* cols = new int[img.cols]();
-
-	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0) {
-				//compute the area of the object
-				area++;
-				modif_img(i, j)[0] = 0;
-				modif_img(i, j)[1] = 0;
-				modif_img(i, j)[2] = 0;
-
-				//compute the center of mass
-				center_row += i;
-				center_col += j;
-
-
-				if (isInside(img, i, j - 1) && (img(i, j - 1) == 255)) {
-					perimeter++; 
-					edge = true;
-				}
-				else {
-					if (isInside(img, i, j + 1) && (img(i - 1, j - 1) == 255)) {
-						perimeter++;
-						edge = true;
-					}
-					else {
-						if (isInside(img, i + 1, j) && (img(i + 1, j) == 255)) {
-							perimeter++;
-							edge = true;
-						}
-						else
-							if (isInside(img, i + 1, j) && (img(i, j + 1) == 255)){
-								perimeter++;
-								edge = true;
-							}
-					}
-				}
-				if (edge) {
-					modif_img(i, j)[0] = 0;
-					modif_img(i, j)[1] = 0;
-					modif_img(i, j)[2] = 255;
-				}
-				edge = false;
-
-				rows[i]++;
-				cols[j]++;
-			}
-		}
-	}
-
-	center_row /= area;
-	center_col /= area;
-
-	for (int i = center_col - 10; i <= center_col + 10; i++) {
-		modif_img(center_row, i)[0] = 255; 
-		modif_img(center_row, i)[1] = 255;
-		modif_img(center_row, i)[2] = 255;
-	}
-
-	for (int i = center_row - 10; i <= center_row + 10; i++) {
-		modif_img(i, center_col)[0] = 255;
-		modif_img(i, center_col)[1] = 255;
-		modif_img(i, center_col)[2] = 255;
-	}
-
-	int num = 0; 
-	int den = 0, den1 = 0, den2 = 0;
-	int dif_col = 0, dif_row = 0;
-
-	int c_max = 0, c_min = img.cols;
-	int r_max = 0, r_min = img.rows;
-	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0) {
-				dif_col = j - center_col;
-				dif_row = i - center_row;
-				num += dif_row * dif_col;
-				den += dif_col * dif_col - dif_row * dif_row;
-
-				if (i < r_min)
-					r_min = i;
-				if (i > r_max)
-					r_max = i;
-				if (j < c_min)
-					c_min = j;
-				if (j > c_max)
-					c_max = j;
-			}
-		}
-	}
-
-	num = num * 2;
-
-	double ang = atan2(num, den) * 0.5;
-	cout << ang;
-	int p1_x = center_col + 100 * cos(ang);
-	int p1_y = center_row + 100 * sin(ang);
-
-	int p2_x = center_col - 100 * cos(ang);
-	int p2_y = center_row - 100 * sin(ang);
-
-	Point p1(p1_x, p1_y);
-	Point p2(p2_x, p2_y);
-
-	line(modif_img, p1, p2, (255, 255, 255));
-
-	float circularity = (4 * PI * area) / (perimeter * perimeter);
-	cout << "Circularity " << circularity << endl;
-
-	Point b1(c_min, r_min);
-	Point b2(c_min, r_max);
-	Point b3(c_max, r_max);
-	Point b4(c_max, r_min);
-
-	line(modif_img, b1, b2, (255, 0, 0));
-	line(modif_img, b2, b3, (255, 0, 0));
-	line(modif_img, b3, b4, (255, 0, 0));
-	line(modif_img, b4, b1, (255, 0, 0));
-
-	imshow("Modif Img", modif_img);
-	
-	float aspect_ration = (c_max - c_min + 1.f) / (r_max - r_min + 1);
-	cout << "Aspect Ratio " << aspect_ration << endl;
-
-
-	Mat_<Vec3b> projection(img.size());
-
-	projection.setTo(255);
-
-	for (int i = 0; i < projection.rows; i++) {
-		int cur_row = rows[i];
-		for (int k = 0; k < cur_row; k++) {
-			int j = projection.cols - k - 1;
-
-			projection(i, j)[0] = 0;
-			projection(i, j)[1] = 0;
-			projection(i, j)[2] = 255;
-		}
-	}
-
-	for (int j = 0; j < projection.cols; j++) {
-		int cur_col = cols[j];
-		for (int k = 0; k < cur_col; k++) {
-			int i = projection.rows - k - 1;
-			projection(i, j)[0] = 0;
-			projection(i, j)[1] = 255;
-			projection(i, j)[2] = 0;
-		}
-	}
-
-	imshow("Projection", projection);
-
-	waitKey(0);
-
 }
 //Lab4
 vector<Point> pixels(Mat_<uchar>& img, int label_val) {
@@ -567,12 +330,10 @@ vector<Point> pixels(Mat_<uchar>& img, int label_val) {
 	}
 	return pixels;
 }
-
 int Area(vector<Point>& pixels) {
 	return pixels.size();
 }
-
-Point CenterMass(vector<Point>& pixels) {
+void CenterMass(vector<Point>& pixels, double& i_mass, double& j_mass) {
 	long long sum_of_i = 0;
 	long long sum_of_j = 0;
 
@@ -581,89 +342,94 @@ Point CenterMass(vector<Point>& pixels) {
 		sum_of_j += pixels[i].x;
 	}
 
-	double i_mass = (sum_of_i * 1.0) / Area(pixels);
-	double j_mass = (sum_of_j * 1.0) / Area(pixels);
-    return Point(j_mass,i_mass);
+	i_mass = (sum_of_i * 1.0) / Area(pixels);
+	j_mass = (sum_of_j * 1.0) / Area(pixels);
 }
-double Elongation(vector<Point>& pixels) {
-    Point center = CenterMass(pixels);
-    double center_y = center.y; // i_mass = row (y)
-    double center_x = center.x; // j_mass = col (x)
+double Elongation(vector<Point>& pixels, double i_mass, double j_mass) {
+	double sum_iijj = 0;
+	double sum_ii_at_2 = 0;
+	double sum_jj_at_2 = 0;
 
-    double sum_xy = 0.0, sum_y = 0.0, sum_x = 0.0;
+	for (int i = 0; i < pixels.size(); i++) {
+		double dif_currentP_mass_i = pixels[i].y - i_mass;
+		double dif_currentP_mass_j = pixels[i].x - j_mass;
+		sum_ii_at_2 += dif_currentP_mass_i * dif_currentP_mass_i;
+		sum_jj_at_2 += dif_currentP_mass_j * dif_currentP_mass_j;
+		sum_iijj += dif_currentP_mass_i * dif_currentP_mass_j;
+	}
 
-    for (int i = 0; i < pixels.size(); i++) {
-        double dy = pixels[i].y - center_y; // row diff
-        double dx = pixels[i].x - center_x; // col diff
+	double angle = 0.5 * (atan2(2.0 * sum_iijj, (sum_jj_at_2 - sum_ii_at_2)));
 
-        sum_y += dy * dy;
-        sum_x += dx * dx;
-        sum_xy += dy * dx;
-    }
-
-    double angle = 0.5 * atan2(2.0 * sum_xy, sum_x - sum_y);
-    return angle;
+	return angle;
 }
 int Perimeter(Mat_<uchar>& img, int label_val) {
-	int perimeter  = 0;
-	for (int y = 0; y < img.rows; y++) {
-		for (int x = 0; x < img.cols; x++) {
-			if (img(y, x) == label_val) {
+	int cnt = 0;
+
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			if (img(i, j) == label_val) {
+
 				bool isOnContour = false;
 
-				for (int dy = -1; dy <= 1 && !isOnContour; dy++) {
-                    for (int dx = -1; dx <= 1 && !isOnContour; dx++) {
-                        if (dx != 0 || dy == 0) {
-                            int ny = y + dy;
-                            int nx = x + dx;
-                            if (ny < 0 || ny >= img.rows || nx < 0 || nx >= img.cols || img(ny, nx) != label_val) {
-                                isOnContour = true;
-                            }
-                        }
-                    }
-                }
+				for (int window_i = -1; window_i <= 1; window_i++) {
+					for (int window_j = -1; window_j <= 1; window_j++) {
+						if (!(window_i == 0 && window_j == 0)) {
+
+							int neighbour_i = i + window_i;
+							int neighbour_j = j + window_j;
+
+							if (neighbour_i < 0 || neighbour_i >= img.rows || neighbour_j < 0 || neighbour_j >= img.cols) {
+								isOnContour = true;
+							}
+							else {
+								if (img(neighbour_i, neighbour_j) != label_val) {
+									isOnContour = true;
+								}
+							}
+						}
+						if (isOnContour)
+							break;
+					}
+					if (isOnContour)
+						break;
+				}
 				if (isOnContour)
-                perimeter ++;
+					cnt++;
 			}
 		}
 	}
-	return perimeter ;
+	return cnt;
 }
 void Projection(Mat_<uchar>& img, int label_val) {
-	vector<int> proj_h(img.cols, 0); // vertical bars
-	vector<int> proj_v(img.rows, 0); // horizontal bars
+	vector<int> proj_h(img.cols, 0);
+	vector<int> proj_v(img.rows, 0);
 
-    for (int y = 0; y < img.rows; y++) {
-        for (int x = 0; x < img.cols; x++) {
-            if (img(y, x) == label_val) {
-                proj_h[x]++;
-                proj_v[y]++;
-            }
-        }
-    }
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			if (img(i, j) == label_val) {
+				proj_h[j]++;
+				proj_v[i]++;
+			}
+		}
+	}
 
-    // Create white canvases
-    Mat projection_h(img.rows, img.cols, CV_8UC1, Scalar(255));
-    Mat projection_v(img.rows, img.cols, CV_8UC1, Scalar(255));
+	Mat_<uchar> projection_h_img(img.rows, img.cols, (uchar)255);
+	Mat_<uchar> projection_v_img(img.rows, img.cols, (uchar)255);
 
-    // Draw horizontal projection (as vertical bars from bottom up)
-    for (int x = 0; x < img.cols; x++) {
-        int barHeight = proj_h[x];
-        for (int y = img.rows - 1; y >= img.rows - barHeight && y >= 0; y--) {
-            projection_h.at<uchar>(y, x) = 0;
-        }
-    }
+	for (int j = 0; j < img.cols; j++) {
+		for (int i = img.rows - 1; i >= img.rows - proj_h[j] && i >= 0; i--) {
+			projection_h_img(i, j) = 0;
+		}
+	}
 
-    // Draw vertical projection (as horizontal bars from left to right)
-    for (int y = 0; y < img.rows; y++) {
-        int barWidth = proj_v[y];
-        for (int x = 0; x < barWidth && x < img.cols; x++) {
-            projection_v.at<uchar>(y, x) = 0;
-        }
-    }
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < proj_v[i] && j < img.cols; j++) {
+			projection_v_img(i, j) = 0;
+		}
+	}
 
-    imshow("Horizontal Projection", projection_h);
-    imshow("Vertical Projection", projection_v);
+	imshow("Horizontal Projection", projection_h_img);
+	imshow("Vertical Projection", projection_v_img);
 }
 void util(Mat_<uchar>& img, int label_val) {
 	vector<Point> objPixels = pixels(img, label_val);
@@ -672,18 +438,17 @@ void util(Mat_<uchar>& img, int label_val) {
 	cvtColor(img, clone_img, COLOR_GRAY2BGR);
 	int area = Area(objPixels);
 
-    Point p = CenterMass(objPixels);
-    double i_mass, j_mass;
-    i_mass=p.x;
-    j_mass=p.y;
-	double axis = Elongation(objPixels );
+	double i_mass, j_mass;
+	CenterMass(objPixels, i_mass, j_mass);
+
+	double axis = Elongation(objPixels, i_mass, j_mass);
 	int perimeter = Perimeter(img, label_val);
 	//Out
 	cout << "Area: " << area << endl;
 	cout << "Perimeter: " << perimeter << endl;
 	cout << "Center_of_mass: (" << j_mass << ", " << i_mass << ")" << endl;
 	cout << "Axis of elongation: " << axis << endl;
-	
+
 	//draw
 	//---perimeter
 	Mat_<Vec3b> pimg(img.size(), Vec3b(255, 255, 255));
@@ -781,12 +546,12 @@ Mat_<Vec3b> generate_color(Mat_<int>& labels)
 		for (int j = 0; j < labels.cols; j++) {
 			int label = labels(i, j);
 
-			colorImg(i, j) = labelColorVec[label];  
-			
+			colorImg(i, j) = labelColorVec[label];
+
 		}
 	}
 	return colorImg;
-} 
+}
 void bfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 {
 	int di8[8] = { -1,-1,-1,0,0,1,1,1 };
@@ -794,9 +559,9 @@ void bfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 	int di4[4] = { -1,0,1,0 };
 	int dj4[4] = { 0,-1,0,1 };
 	int label = 0;
-	for (int i = 0; i < img.rows; i++){
-		for (int j = 0; j < img.cols; j++){
-			if (img(i, j) == 0 && labels(i, j) == 0){
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			if (img(i, j) == 0 && labels(i, j) == 0) {
 				label++;
 				queue< pair<int, int> > Q;
 				labels(i, j) = label;
@@ -833,8 +598,8 @@ void bfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 	imshow("BFS", color_result);
 	waitKey(0);
 
-} 
-void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
+}
+void two_pass(Mat_<uchar>& img, Mat_<int>& labels, int u) {
 	int di4[4] = { -1, 0, 1, 0 };
 	int dj4[4] = { 0, -1, 0, 1 };
 	int di8[8] = { -1,-1,-1,0,0,1,1,1 };
@@ -845,7 +610,7 @@ void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
 	//First pass
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0 && labels(i, j) == 0) { 
+			if (img(i, j) == 0 && labels(i, j) == 0) {
 				vector<int> L;
 				for (int t = 0; t < u; t++) {
 					int ni = (u == 8) ? i + di8[t] : i + di4[t];
@@ -859,7 +624,7 @@ void two_pass(Mat_<uchar>& img, Mat_<int>& labels,int u) {
 					labels(i, j) = label;
 				}
 				else {
-					int x = L[0];   
+					int x = L[0];
 					for (int i = 1; i < L.size(); i++) {
 						if (L[i] < x) {
 							x = L[i];
@@ -931,7 +696,7 @@ void bfs_visualize(Mat_<uchar>& img, Mat_<int>& labels, int u)
 
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0 && labels(i, j) == 0) { 
+			if (img(i, j) == 0 && labels(i, j) == 0) {
 				label++;
 				queue<pair<int, int>> Q;
 				labels(i, j) = label;
@@ -941,7 +706,7 @@ void bfs_visualize(Mat_<uchar>& img, Mat_<int>& labels, int u)
 					pair<int, int> p = Q.front();
 					Q.pop();
 
-					
+
 					int N = (u == 8) ? 8 : 4;
 					for (int t = 0; t < N; t++) {
 						int ni = (u == 8) ? p.first + di8[t] : p.first + di4[t];
@@ -954,18 +719,18 @@ void bfs_visualize(Mat_<uchar>& img, Mat_<int>& labels, int u)
 						}
 					}
 				}
-				
+
 				/*Mat_<Vec3b> intermediate_result = generate_color(labels);
 				imshow("Intermediate Results", intermediate_result);
-				waitKey(0);*/  
-				
+				waitKey(0);*/
+
 			}
 		}
 	}
 
 	Mat_<Vec3b> color_result = generate_color(labels);
 	imshow("Final Result", color_result);
-	waitKey(0); 
+	waitKey(0);
 }
 void dfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 {
@@ -977,7 +742,7 @@ void dfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
-			if (img(i, j) == 0 && labels(i, j) == 0) {   
+			if (img(i, j) == 0 && labels(i, j) == 0) {
 				label++;
 				stack<pair<int, int>> S;
 				labels(i, j) = label;
@@ -1001,13 +766,13 @@ void dfs(Mat_<uchar>& img, Mat_<int>& labels, int u)
 						}
 					}
 				}
-				
+
 			}
 		}
 	}
 	Mat_<Vec3b> color_result = generate_color(labels);
 	imshow("DFS", color_result);
-	waitKey(0);  
+	waitKey(0);
 }
 //Lab6
 vector<Point> borderTrace(const Mat_<uchar>& img)
@@ -1015,7 +780,7 @@ vector<Point> borderTrace(const Mat_<uchar>& img)
 	int di[8] = { 0, -1, -1, -1, 0,  1,  1, 1 };
 	int dj[8] = { 1,  1,  0, -1, -1, -1, 0, 1 };
 	vector<Point> border;
-	int start_i=-1, start_j=-1;
+	int start_i = -1, start_j = -1;
 	for (int i = 0; i < img.rows && start_i < 0; i++)
 	{
 		for (int j = 0; j < img.cols && start_j < 0; j++)
@@ -1042,9 +807,9 @@ vector<Point> borderTrace(const Mat_<uchar>& img)
 	Point current = P0;
 	Point P1;
 
-	if (dir % 2 == 0) 
+	if (dir % 2 == 0)
 		startDir = (dir + 7) % 8;
-	else 
+	else
 		startDir = (dir + 6) % 8;
 
 	for (int k = 0; k < 8; k++)
@@ -1054,7 +819,7 @@ vector<Point> borderTrace(const Mat_<uchar>& img)
 		int nj = start_j + dj[checkDir];
 		if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols)
 		{
-			if (img(ni, nj) == 0) 
+			if (img(ni, nj) == 0)
 			{
 				P1 = Point(nj, ni);
 				dir = checkDir;
@@ -1089,17 +854,17 @@ vector<Point> borderTrace(const Mat_<uchar>& img)
 				{
 					prev = current;
 					current = Point(nj, ni);
-					
+
 					dir = checkDir;
 					ok = true;
 					break;
 				}
 			}
 		}
-		if (current== P0)
+		if (current == P0)
 			break;
 		border.push_back(current);
-		if (!ok)  
+		if (!ok)
 			break;
 	}
 	return border;
@@ -1131,7 +896,7 @@ void printVector(const vector<int>& v)
 		cout << val << " ";
 	cout << "\n";
 }
-vector<int> buildDerivativeCode( vector<int>& chain)
+vector<int> buildDerivativeCode(vector<int>& chain)
 {
 	vector<int> deriv;
 	for (int i = 0; i + 1 < chain.size(); i++)
@@ -1173,7 +938,399 @@ void reconstructs(Point start, vector<int> chain) {
 	waitKey(0);
 
 }
+//Lab7
+Mat_<uchar> dilation(Mat_<uchar> src, Mat_<uchar> str_el) {
+	Mat_<uchar> dst = src.clone();
+
+	for (int i = 0; i < src.rows; i++) {
+		for (int j = 0; j < src.cols; j++) {
+			if (src(i, j) == 0) {
+				for (int u = 0; u < str_el.rows; u++) {
+					for (int v = 0; v < str_el.cols; v++) {
+						if (str_el(u, v) == 0) {
+							//neigbhour under element (u,v)
+							int new_i = i + u - str_el.rows / 2;
+							int new_j = j + v - str_el.cols / 2;
+							if (isInside(src, new_i, new_j)) {
+								dst(new_i, new_j) = 0;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return dst;
+}
+Mat_<uchar> erosion(Mat_<uchar> src, Mat_<uchar> str_el) {
+	 Mat_<uchar> dst = src.clone();
+
+	 for (int i = 0; i < src.rows; i++) {
+		 for (int j = 0; j < src.cols; j++) {
+			 bool fits = true;
+			 for (int u = 0; u < str_el.rows; u++) {
+				 for (int v = 0; v < str_el.cols; v++) {
+					 if (str_el(u, v) == 0) {
+						 int new_i = i + u - str_el.rows / 2;
+						 int new_j = j + v - str_el.cols / 2;
+						 if (!isInside(src, new_i, new_j) || src(new_i, new_j) != 0) {
+							 fits = false;
+							 break;
+						 }
+					 }
+				 }
+				 if (!fits) break;
+			 }
+			 if (fits)
+				 dst(i, j) = 0;
+		 }
+	 }
+	 return dst;
+ }
+//Lab8
+float mean(Mat_<uchar>& img) {
+	int M = img.rows * img.cols;
+	float result = 0;
+	vector<int> histo = calc_hist(img);
+	for (int i = 0; i < histo.size(); i++)
+	{
+		result += (histo[i] * i);
+	}
+	return (result / (M * 1.0));
+}
+float standard_deviation(Mat_<uchar>& img, float mean_intensity) {
+	int M = img.rows * img.cols;
+	float result = 0;
+	vector<int> histo = calc_hist(img);
+	for (int i = 0; i < histo.size(); i++)
+	{
+		result += (((i - mean_intensity) * (i - mean_intensity) * histo[i]) * 1.0);
+	}
+	result = (result / (M * 1.0));
+	result = sqrt(result);
+	return result;
+}
+vector<int> cumulative_histogram(Mat_<uchar>& img) {
+	vector<int> histo = calc_hist(img);
+	vector<int> cpdf(256);
+	cpdf[0] = histo[0];
+
+	for (int i = 1; i < histo.size(); i++)
+	{
+		cpdf[i] = cpdf[i - 1] + histo[i];
+	} 
+	return cpdf;
+}
+Mat_<uchar>  thresholding(Mat_<uchar>& img) {
+
+	int i_min = INT_MAX;
+	int i_max = INT_MIN;
+
+	vector<int>  histo = calc_hist(img);
+
+	for (int i = 0; i <  histo.size(); i++)
+	{
+		if ( histo[i] > 0)
+		{
+			i_min = min(i_min, i);
+			i_max = max(i_max, i);
+		}
+	}
+	float T = (i_min + i_max) / 2.0;
+	float last_T = 0;
+
+	while (1) {
+		float m1 = 0, m2 = 0, n1 = 0, n2 = 0;
+
+
+		for (int i = i_min; i <= i_max; i++)
+		{
+			if (i < T)
+			{
+				m1 += ( histo[i] * i);
+				n1 += histo[i];
+			}
+			else
+			{
+				m2 += (histo[i] * i);
+				n2 +=histo[i];
+			}
+		}
+
+		m1 = m1 / n1;
+		m2 = m2 / n2;
+		last_T = T;
+		T = (m1 + m2) / 2.0;
+
+		if (abs(T - last_T) <= 0.0) {
+			break;
+		}
+	}
+
+	Mat_<uchar> result(img.size(), uchar(255));
+	for (int i = 0; i < img.rows; i++)
+	{
+		for (int j = 0; j < img.cols; j++)
+		{
+			if (img(i, j) < T)
+			{
+				result(i, j) = 0;
+			}
+			else
+			{
+				result(i, j) = 255;
+			}
+		}
+	}
+	return result;
+}
+Mat_<uchar> histogram_stretching_shrinking(Mat_<uchar>& img, int min_val, int max_val) {
+	Mat_<uchar> result(img.size(), uchar(255));
+
+	int i_min = INT_MAX;
+	int i_max = INT_MIN;
+
+	vector<int> histo = calc_hist(img);
+
+	for (int i = 0; i <  histo.size(); i++)
+	{
+		if ( histo[i] > 0)
+		{
+			i_min = min(i_min, i);
+			i_max = max(i_max, i);
+		}
+	}
+
+	for (int i = 0; i < img.rows; i++)
+	{
+		for (int j = 0; j < img.cols; j++)
+		{
+			result(i, j) = ((img(i, j) - i_min) * (max_val - min_val)) / (i_max - i_min) + min_val;
+		}
+	}
+
+	return result;
+}
+//Lab9.1
+Mat_<float> convolution(Mat_<uchar> img, Mat_<float> H) {
+	Mat_<float> dst(img.rows, img.cols);
+	float s = 0; 
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) { 
+			s = 0;
+			for (int u = 0; u < H.rows; u++) {
+				for (int v = 0; v < H.cols; v++) {
+					int ii = i + u - (H.rows / 2);
+					int jj = j + v - (H.cols / 2); 
+					if (isInside(img, ii, jj)) {
+						s += img(ii, jj) * H(u, v);
+					}
+				}
+			} 
+			dst(i, j) = s;
+		}
+	} 
+	return dst;
+}
+
+Mat_<uchar> normalization(Mat_<float> img, Mat_<float> H) {
+	Mat_<uchar> dst(img.rows, img.cols);
+	float pos = 0, neg = 0;
+	float a, b;
+	for (int u = 0; u < H.rows; u++) {
+		for (int v = 0; v < H.cols; v++) {
+			if (H(u, v) > 0)
+				pos += H(u, v);
+			else
+				neg += H(u, v);
+		}
+	}
+	b = pos * 255;
+	a = neg * 255;
+	for (int i = 0; i < img.rows; i++)
+		for (int j = 0; j < img.cols; j++)
+			dst(i, j) = (img(i, j) - a) * 255 / (b - a);
+	return dst;
+}
+//Lab9.2
+void centering_transform(Mat img) {
+	//expects floating point image
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			img.at<float>(i, j) = ((i + j) & 1) ? -img.at<float>(i, j) : img.at<float>(i, j);
+		}
+	}
+}
+Mat generic_frequency_domain_filter(Mat src,int x) {
+	//convert input image to float image
+	Mat srcf;
+	src.convertTo(srcf, CV_32FC1);
+	//centering transformation
+	centering_transform(srcf);
+	//perform forward transform with complex image output
+	Mat fourier;
+	dft(srcf, fourier, DFT_COMPLEX_OUTPUT);
+	//split into real and imaginary channels
+	Mat channels[] = { Mat::zeros(src.size(), CV_32F), Mat::zeros(src.size(), CV_32F) };
+	split(fourier, channels); // channels[0] = Re(DFT(I)), channels[1] = Im(DFT(I))
+	//calculate magnitude and phase in floating point images mag and phi
+	Mat mag, phi;
+	magnitude(channels[0], channels[1], mag);
+	phase(channels[0], channels[1], phi);
+	//display the phase and magnitude images here
+
+	//insert filtering operations on Fourier coefficients here
+	// ...... calculate X'uv
+	if (x == 0) {
+		int R = 20;
+		for (int i = 0; i < mag.rows; i++) {
+			for (int j = 0; j < mag.cols; j++) {
+				float dist = pow((mag.cols / 2) - i, 2) + pow((mag.rows / 2) - j, 2);
+				if (dist > pow(R, 2)) {
+					mag.at<float>(i, j) = 0;
+				}
+			}
+		}
+	}
+	else {
+		float A = 50.0f;   
+		for (int i = 0; i < mag.rows; i++) {
+			for (int j = 0; j < mag.cols; j++) {
+				float du = (float)(i - (mag.rows / 2));
+				float dv = (float)(j - (mag.cols / 2));
+				float dist2 = (du * du + dv * dv);
+				float gaussian = 1.0f - exp(-dist2 / (A * A));
+				mag.at<float>(i, j) *= gaussian;
+			}
+		}
+
+	}
+	//store in real part in channels[0] and imaginary part in channels[1]
+	// ...... start here
+	for (int i = 0; i < mag.rows; i++) {
+		for (int j = 0; j < mag.cols; j++) {
+			channels[0].at<float>(i, j) = mag.at<float>(i, j) * cos(phi.at<float>(i, j));
+			channels[1].at<float>(i, j) = mag.at<float>(i, j) * sin(phi.at<float>(i, j));
+		}
+	}
+	//perform inverse transform and put results in dstf
+	Mat dst, dstf;
+	merge(channels, 2, fourier);
+	dft(fourier, dstf, DFT_INVERSE | DFT_REAL_OUTPUT | DFT_SCALE);
+	//inverse centering transformation
+	centering_transform(dstf);
+	//normalize the result and put in the destination image
+	normalize(dstf, dst, 0, 255, NORM_MINMAX, CV_8UC1);
+	//=================================================
+	//  ...... Display Magnitude  
+	Mat mag_disp;
+	mag += Scalar::all(1);
+	log(mag, mag_disp);
+	normalize(mag_disp, mag_disp, 0, 255, NORM_MINMAX);
+	mag_disp.convertTo(mag_disp, CV_8UC1);
+	imshow("Magnitude", mag_disp);
+
+	//  ...... Display Phase  
+	Mat phi_disp;
+	normalize(phi, phi_disp, 0, 255, NORM_MINMAX);
+	phi_disp.convertTo(phi_disp, CV_8UC1);
+	imshow("Phase", phi_disp);
+
+	//Note: normalizing distorts the resut while enhancing the image display in the range [0,255].
+	//For exact results (see Practical work 3) the normalization should be replaced with convertion:
+	//dstf.convertTo(dst, CV_8UC1);
+	return dst;
+}
+//Lab 10. Noise modeling and digital image filtering
+
 void main() {
+	//-------------------------Lab10
+	
+	//-------------------------Lab_9.1
+	/*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
+	Mat_<float> mean_filter = (Mat_<double>(3, 3) << 1, 1, 1, 1, 1, 1, 1, 1, 1);
+	Mat_<float> conv_res = convolution(img, mean_filter);
+	Mat_<uchar> new_img_blurred = normalization(conv_res, mean_filter);
+	imshow("Original Image", img);
+	imshow("Mean Filtered Image", new_img_blurred);
+	waitKey(0);
+
+	Mat_<float> mean_filter5(5, 5);
+	mean_filter5.setTo(1);
+	conv_res = convolution(img, mean_filter5);
+	Mat_<uchar> new_img = normalization(conv_res, mean_filter5);
+	imshow("Original Image", img);
+	imshow("Mean Filtered Image 5x5", new_img);
+	waitKey(0); 
+
+	Mat_<float> gaussian_filter = (Mat_<double>(3, 3) << 1, 2, 1, 2, 4, 2, 1, 2, 1);
+	conv_res = convolution(img, gaussian_filter);
+	new_img = normalization(conv_res, gaussian_filter);
+	imshow("Original Image", img);
+	imshow("Gaussian Filtered Image", new_img);
+	waitKey(0);
+
+	Mat_<float> laplace_filter = (Mat_<double>(3, 3) << 0, -1, 0, -1, 4, -1, 0, -1, 0);
+	conv_res = convolution(img, laplace_filter);
+	new_img = normalization(conv_res, laplace_filter);
+	imshow("Original Image", img);
+	imshow("Laplace Filtered Image", new_img);
+	waitKey(0);
+
+	conv_res = convolution(new_img_blurred, laplace_filter);
+	new_img = normalization(conv_res, laplace_filter);
+	imshow("Original Image", img);
+	imshow("Laplace Filtered on Blurred Image", new_img);
+	waitKey(0);
+
+	Mat_<float> high_pass_filter = (Mat_<double>(3, 3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
+	conv_res = convolution(img, high_pass_filter);
+	new_img = normalization(conv_res, high_pass_filter);
+	imshow("Original Image", img);
+	imshow("High Pass Filtered Image", new_img);
+	waitKey(0);*/
+	//-------------------------Lab_9.2
+	/*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
+	auto dst = generic_frequency_domain_filter(img,1);
+	imshow("Image before  ", img);
+	waitKey(0); 
+	imshow("Image after  ", dst);
+	waitKey(0);*/
+	//-------------------------Lab_8
+	/*Mat_<uchar> img = imread("Images/balloons.bmp", IMREAD_GRAYSCALE);
+
+	float mean_intensity = mean(img);
+	cout << "Mean intensity: " << mean_intensity << endl;
+
+	float standarddev= standard_deviation(img, mean_intensity);
+	cout << "Standard Deviation: " << standarddev << endl;
+
+	vector<int> cumulative = cumulative_histogram(img);
+	showHistogram("cumulative_histogram", cumulative, 256, 400);
+	waitKey(0);
+
+	Mat_<uchar> img2 = imread("Images/eight.bmp", IMREAD_GRAYSCALE);
+	imshow("Image before thresholding", img2);
+	waitKey(0);
+	Mat_<uchar> img_result = thresholding(img2);
+	imshow("Image after thresholding", img_result);
+	waitKey(0);*/
+	//-------------------------Lab_7
+	//Mat_<uchar> img = imread("Images/1_Dilate/wdg2ded1_bw.bmp", IMREAD_GRAYSCALE);
+	//uchar data[] = {
+	//	255,   0, 255,
+	//	  0,   0,   0,
+	//	255,   0,   0
+	//};
+	//Mat_<uchar> str_el(3, 3, data);
+
+	//Mat_<uchar> img2 = dilation(img, str_el);
+	//imshow("Dilation", img2);
+	//waitKey(0);
+	//Mat_<uchar> img3 = erosion(img2, str_el);
+	//imshow("Erosion", img3);
+	//waitKey(0);
 	////------------------------Lab_6
 	// Mat_<uchar> img = imread("Images/triangle_up.bmp", IMREAD_GRAYSCALE);
 	// if (img.empty())
@@ -1211,45 +1368,45 @@ void main() {
 	//bfs(img, labels, 8);
 	//dfs(img, labels, 8);
 	//bfs_visualize(img, labels, 8);
-	
+
 	////------------------------Lab_4
 	//loadAndSetupImage("Images/oval_obl.bmp");
 	//waitKey(0);
 
 	////------------------------Lab_3
-	// Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
-	// if (img.empty()) return;
-	// Mat_<Vec3b> colorimg = imread("Images/Lena_24bits.bmp");
-	// imshow("Original", colorimg);
-	// vector<int> hist = calc_hist(img);
-	// showHistogram("Histogram", hist, 256, 400);
-	// waitKey(0);
-	// int m = 128; 
-	// vector<int> custom_hist = hist_custom_bins(img, m);
-	// showHistogram("Custom Bins", hist, 100, 300);
-	// waitKey(0);
-	// Mat simplified = multilevel_thresholding(img);
-	// imshow("Multilevel Thresholding", simplified);
-	// waitKey(0);
-	// Mat hue = floydSteinbergDithering(colorimg);
-	// imshow("Multilevel Thresholding", hue);
-	// waitKey(0);
+	 //Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
+	 //if (img.empty()) return;
+	 //Mat_<Vec3b> colorimg = imread("Images/Lena_24bits.bmp");
+	 //imshow("Original", img);
+	 //*vector<int> hist = calc_hist(img);
+	 //showHistogram("Histogram", hist, 256, 400);
+	 //waitKey(0);
+	 //int m = 128; 
+	 //vector<int> custom_hist = hist_custom_bins(img, m);
+	 //showHistogram("Custom Bins", hist, 100, 300);
+	 //waitKey(0);*/
+	 //Mat simplified = multilevel_thresholding(img);
+	 //imshow("Multilevel Thresholding", simplified);
+	 //waitKey(0);
+	 //Mat hue = multilevel_thresholding(colorimg);
+	 //imshow("Multilevel Thresholding", hue);
+	 //waitKey(0);
 
-    ////------------------------Lab_2
-	// split_channels();
-	// convert_to_grayscale();
-	// convert_grayscale_to_BW();
-	// Mat_<Vec3b> img = imread("Images/Lena_24bits.bmp");
-	// imshow("Original", img);
-	// waitKey(0);
-	// Mat_<Vec3b> hsvimg = computeHSV(img);
-	// imshow("HSV", hsvimg);
-	// waitKey(0);
-	// Mat_<Vec3b> rgbimg(hsvimg.rows, hsvimg.cols);
-	// cvtColor(hsvimg, rgbimg, COLOR_HSV2BGR);
-	// imshow("RGB", rgbimg);
-	// waitKey(0);
-	    
+	////------------------------Lab_2
+	//split_channels();
+	//convert_to_grayscale();
+	//convert_grayscale_to_BW();
+	//Mat_<Vec3b> img = imread("Images/Lena_24bits.bmp");
+	//imshow("Original", img);
+	//waitKey(0);
+	//Mat_<Vec3b> hsvimg = computeHSV(img);
+	//imshow("HSV", hsvimg);
+	//waitKey(0);
+	//Mat_<Vec3b> rgbimg(hsvimg.rows, hsvimg.cols);
+	//cvtColor(hsvimg, rgbimg, COLOR_HSV2BGR);
+	//imshow("RGB", rgbimg);
+	//waitKey(0);
+
 	////------------------------Lab_1
 	// negative_image();
 	// additive_factor(15);
@@ -1257,6 +1414,4 @@ void main() {
 	// create_img();
 	// create3x3float();
 	// symethric_img();
-
-
 }
