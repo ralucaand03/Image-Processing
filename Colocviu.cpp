@@ -1243,10 +1243,113 @@ Mat generic_frequency_domain_filter(Mat src,int x) {
 	return dst;
 }
 //Lab 10. Noise modeling and digital image filtering
+Mat_<uchar >median_filter(Mat_<uchar> img,int w) {
+	double t = (double)getTickCount();
+	Mat_ <uchar>  dst(img.rows, img.cols);
+	int half = w / 2;
+	for (int i = 0; i < img.rows ; i++) {
+		for (int j = 0; j < img.cols ; j++) {
+			vector<uchar> neighbours;
+			for (int wi = -half; wi <= half; wi++) {
+				for (int wj = -half; wj <= half; wj++) {
+					int i2 = i + wi;
+					int j2 = j + wj;
+					if (isInside(img, i2, j2)) {
+						neighbours.push_back(img(i2, j2));
+					}
+				}
+			}
+			sort(neighbours.begin(), neighbours.end());
+			dst(i, j) = neighbours[neighbours.size()/2];
+		}
+	}
+	t = ((double)getTickCount() - t) / getTickFrequency();
+	printf("Time for Median Filtered = %.3f [ms]\n", t * 1000);
+	return dst;
+}
 
+Mat_< uchar> gaussian_2D(Mat_<uchar> img,int w) {
+	double t = (double)getTickCount();
+	Mat_<uchar> result = img.clone(); 
+	float standard_dev = w / 6.0f; 
+	int half = w / 2;
+	double sum = 0;
+	float coeff = 1.0f / (2.0f * CV_PI * pow(standard_dev, 2)); 
+	Mat_<float> kernel(w, w);
+	for (int i = 0; i < w; i++) {
+		for (int j = 0; j < w; j++) {
+			float x = i - half;
+			float y = j - half;
+			kernel(i, j) = coeff * exp(-(pow(x, 2) + pow(y, 2)) / (2 * pow(standard_dev, 2)));
+		}
+	}
+	 
+	Mat_<float> conv_img = convolution(img, kernel);
+	result = normalization(conv_img, kernel);
+	t = ((double)getTickCount() - t) / getTickFrequency();
+	printf("Time for Gaussian 2D = %.3f [ms]\n", t * 1000);
+	return result;
+} 
+Mat_<uchar> gaussian_1D(Mat_<uchar> img,int w, int x) {
+	double t = (double)getTickCount();
+	Mat_<uchar> result ;
+	float standard_dev = w / 6.0f;
+	int half = w / 2;
+	double sum = 0;
+	float coeff = 2.0f * CV_PI;
+	Mat_<float> H;
+
+	if (x == 1) {
+		Mat_<float> kernel(1, w);
+		for (int i = 0; i < w; i++) {
+			float x = i - half;
+
+			kernel(0,i) = exp(-(pow(x, 2))) / (sqrt(coeff) * standard_dev);
+		}
+		H = kernel.clone();
+	} 
+	else {
+		Mat_<float> kernel(w, 1);
+		for (int j = 0; j < w; j++) {
+			float y = j - half;
+			kernel(j,0) = exp(-(pow(y, 2))) / (sqrt(coeff) * standard_dev);
+		}
+		H = kernel.clone();
+	}
+
+	Mat_<float> conv_img = convolution(img, H);
+	result = normalization(conv_img, H);
+
+	t = ((double)getTickCount() - t) / getTickFrequency();
+	printf("Time for Gaussian 1D = %.3f [ms]\n", t * 1000);
+	return result;
+}
 void main() {
+	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_FATAL);
 	//-------------------------Lab10
+	//median
+	Mat_<uchar> img = imread("Images/portrait_Salt&Pepper1.bmp", IMREAD_GRAYSCALE);
+	imshow("Original Image", img);
+	waitKey(0); 
+	Mat_<uchar> mf = median_filter(img,3);
+	imshow("Median Filtered Image", mf);
+	waitKey(0);
 	
+	////gaussian
+	Mat_<uchar> img2 = imread("Images/portrait_Gauss2.bmp", IMREAD_GRAYSCALE);
+	imshow("Original Image2", img2);
+	waitKey(0);
+	Mat_<uchar> gs = gaussian_2D(img2, 5);
+	imshow("Gaussian 2D Image", gs);
+	waitKey(0);
+	//1D
+	Mat_<uchar> img3 = imread("Images/portrait_Gauss1.bmp", IMREAD_GRAYSCALE);
+	imshow("Original Image3", img3);
+	waitKey(0);
+	Mat_<uchar> forx = gaussian_1D(img3, 5,1);
+	Mat_<uchar> fory = gaussian_1D(forx, 5, 0);
+	imshow("Gaussian 1D Image", fory);
+	waitKey(0);
 	//-------------------------Lab_9.1
 	/*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
 	Mat_<float> mean_filter = (Mat_<double>(3, 3) << 1, 1, 1, 1, 1, 1, 1, 1, 1);
