@@ -87,10 +87,7 @@ void testImageOpenAndSave()
     waitKey(0);
 }
 //-----------------------------------Sudoku Solver
-// extrag cells si compar cu o poza de referinta
-// 
-// Functions implementations
-// Gaussian 2D filter (from Lab)
+// extrag cells si compar cu o poza de referinta 
 bool isInside(Mat img, int i, int j) {
     return (i >= 0 && i < img.rows && j >= 0 && j < img.cols);
 }
@@ -154,14 +151,87 @@ Mat_< uchar> gaussian_2D(Mat_<uchar> img, int w) {
 
     return result;
 }
+
 vector<vector<Point>> borderTrace(const Mat_<uchar>& img) {
     int di[8] = { 0, -1, -1, -1, 0,  1,  1, 1 };
     int dj[8] = { 1,  1,  0, -1, -1, -1, 0, 1 };
+
     vector<vector<Point>> allBorders;
     Mat_<uchar> visited = Mat_<uchar>::zeros(img.size());
 
+    for (int i = 0; i < img.rows; i++) {
+        for (int j = 0; j < img.cols; j++) { 
+            if (img(i, j) == 255 && visited(i, j) == 0) {
+                vector<Point> border;
+
+                Point startPoint(j, i);
+                Point currentPoint = startPoint;
+                border.push_back(currentPoint);
+                visited(i, j) = 1;
+
+                int dir = 0;
+
+                bool borderComplete = false;
+                while (!borderComplete) {
+                    bool foundNext = false;
+
+                    for (int k = 0; k < 8; k++) {
+                        int newDir = (dir + k) % 8;
+
+                        int ni = currentPoint.y + di[newDir];
+                        int nj = currentPoint.x + dj[newDir];
+
+                        if (ni >= 0 && ni < img.rows && nj >= 0 && nj < img.cols && img(ni, nj) == 255) {
+                            currentPoint = Point(nj, ni);
+                            border.push_back(currentPoint);
+                            visited(ni, nj) = 1;
+
+                            dir = (newDir + 5) % 8;
+                            foundNext = true;
+                            break;
+                        }
+                    } 
+                    if (!foundNext || (border.size() > 2 && currentPoint == startPoint)) {
+                        borderComplete = true;
+                    }
+                } 
+                if (border.size() > 50) {  
+                    allBorders.push_back(border);
+                }
+            }
+        }
+    }
 
     return allBorders;
+}
+ 
+Mat drawBorders(const Mat& img, const vector<vector<Point>>& borders ) {
+    int thickness = 2;
+    Mat result = Mat::zeros(img.size(), CV_8UC3);
+
+    if (img.channels() == 3) {
+        img.copyTo(result);
+    }
+    else {
+        cvtColor(img, result, COLOR_GRAY2BGR);
+    }
+
+    srand(time(NULL));
+
+    for (size_t i = 0; i < borders.size(); i++) {
+        uchar r = rand() % 256;
+        uchar g = rand() % 256;
+        uchar b = rand() % 256;
+        Scalar color(b, g, r);
+        vector<Point> contour = borders[i]; 
+        for (size_t j = 0; j < contour.size() - 1; j++) {
+            line(result, contour[j], contour[j + 1], color, thickness);
+        } 
+        if (contour.size() > 1) {
+            line(result, contour[contour.size() - 1], contour[0], color, thickness);
+        }
+    } 
+    return result;
 }
 void drawCustomContours(Mat& image, const vector<Point>& border, Scalar color = Scalar(0, 255, 0), int thickness = 2) {
     for (int i = 0; i < border.size() - 1; i++) {
@@ -227,7 +297,6 @@ Mat_<uchar> multilevel_thresholding(Mat_<uchar> img) {
         }
     }
     maxima.push_back(255);
-
     for (int i = 0; i < img.rows; i++) {
         for (int j = 0; j < img.cols; j++) {
             uchar pixel = img(i, j);
@@ -241,13 +310,14 @@ Mat_<uchar> multilevel_thresholding(Mat_<uchar> img) {
                     minDist = dist;
                 }
             }
-            result(i, j) = closest;
+            // Invert black and white:
+            result(i, j) = 255 - closest;
         }
     }
+
     return result;
 }
-
-
+ 
 //---------------Load image
 Mat localizeSudoku(Mat& sudokuImage)
 {
@@ -271,22 +341,15 @@ Mat localizeSudoku(Mat& sudokuImage)
     imshow("Threshold Image", thresh);
     waitKey(0);
 
-    //-----Contours  
+    //-----Contours
+     
     //vector<vector<Point>> contours2;
     //findContours(thresh, contours2, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE); //! 
     //Mat contourImage2 = sudokuImage.clone();
     //drawContours(contourImage2, contours2, -1, Scalar(0, 255, 0), 2);
-    //imshow("All Contours imp", contourImage2);
-     Mat contourImage2 = sudokuImage.clone();
-    vector<vector<Point>> contours = borderTrace(thresh);
-    drawContours(contourImage2, contours, -1, Scalar(0, 255, 0), 2);
-    /*Mat contourImage = sudokuImage.clone();
-    drawCustomContours(contourImage, border, Scalar(0, 255, 0), 2);
-    if (contourImage.empty()) {
-        cout << "Contour image is empty!" << endl;
-        return sudokuImage;
-    }
-*/
+
+    vector<vector<Point>> contours = borderTrace(thresh); 
+    Mat contourImage2 = drawBorders (sudokuImage, contours);
     imshow("All Contours", contourImage2);
     waitKey(0);
 
@@ -356,7 +419,7 @@ Mat localizeSudoku(Mat& sudokuImage)
 
     Mat matrix = getPerspectiveTransform(src, dst); 
     Mat warped;
-    //warpPerspective(sudokuImage, warped, matrix, Size(800, 800));
+    warpPerspective(sudokuImage, warped, matrix, Size(800, 800));
 
     imshow("Warped Sudoku Board", warped);
     waitKey(0);
