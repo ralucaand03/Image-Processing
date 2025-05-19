@@ -1324,32 +1324,148 @@ Mat_<uchar> gaussian_1D(Mat_<uchar> img,int w, int x) {
 	printf("Time for Gaussian 1D = %.3f [ms]\n", t * 1000);
 	return result;
 }
+//Lab 11
+Mat_ <uchar> canny_edge_detection(Mat_<uchar> img)  {
+	Mat_<float> sk_x = (Mat_<float>(3, 3) << -1, 0, 1, -2, 0, 2, -1, 0, 1);
+	Mat_<float> sk_y = (Mat_<float>(3, 3) << 1, 2, 1, 0, 0, 0, -1, -2, -1);
+	Mat_<float> imgx = convolution(img, sk_x);
+	Mat_<float> imgy = convolution(img, sk_y);
+	imshow("IMG", img);
+	imshow("IMG  x", abs(imgx)/255);
+	imshow("IMG  y", abs(imgy)/255);
+	waitKey(0);
+	int r = img.rows;
+	int c = img.cols;
+	Mat_<float> mag(r, c);
+	Mat_<float> phi(r, c);
+	for (int i = 0; i < r; i++) {
+		for (int j = 0; j < c; j++) {
+			mag(i, j) = sqrt(pow(imgx(i, j), 2) + pow(imgy(i, j), 2));
+			phi(i, j) = atan2(imgy(i, j), imgx(i, j));
+		}
+	}
+
+	Mat_<uchar> dir(r, c);
+	for (int i = 0; i < r; i++) {
+		for (int j = 0; j < c; j++) {
+			float ang = phi(i, j);
+			if (phi(i, j) <= 0) ang = phi(i, j) + 2 * CV_PI;
+			dir(i, j) =  (ang * (8 / (2 * CV_PI))) + 0.5 ;
+			dir(i, j) = dir(i, j) % 8;
+		}
+	}
+
+	int di[] = { 0,-1,-1,-1,0,1,1,1 };
+	int dj[] = { 1,1,0,-1,-1,-1,0,1 };
+
+	Mat_<float> mt(r, c);
+	mt = mag.clone();
+	for (int i = 0; i < r; i++) {
+		for (int j = 0; j < c; j++) {
+			int ni = i + di[dir(i, j)];
+			int nj = j + dj[dir(i, j)];
+
+			int opi = i - di[dir(i, j)];
+			int opj = j - dj[dir(i, j)];
+
+			if (isInside(mt, ni, nj) && mag(ni, nj) > mag(i, j))
+				mt(i, j) = 0;
+			if (isInside(mt, opi, opj) && mag(opi, opj) > mag(i, j))
+				mt(i, j) = 0;
+		}
+	}
+	return mt;
+}
+Mat_<uchar> edge_linking(Mat_<uchar> mt, int t1, int t2) {
+	Mat_<uchar> edges = Mat_<uchar>::zeros(mt.size());
+
+	for (int i = 0; i < mt.rows; i++) {
+		for (int j = 0; j < mt.cols; j++) {
+			if (mt(i, j) >= t2) {
+				edges(i, j) = 255;  
+			}
+			else if (mt(i, j) >= t1) {
+				edges(i, j) = 128; 
+			}
+		}
+	}
+
+	queue<Point> Q;
+	for (int i = 0; i < edges.rows; i++) {
+		for (int j = 0; j < edges.cols; j++) {
+			if (edges(i, j) == 255) {
+				Q.push(Point(j, i));
+			}
+		}
+	}
+
+	int dx[8] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+	int dy[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+
+	while (!Q.empty()) {
+		Point p = Q.front();
+		Q.pop();
+
+		for (int n = 0; n < 8; n++) {
+			int ni = p.y + dy[n];
+			int nj = p.x + dx[n];
+
+			if (isInside(mt, ni, nj) && edges(ni, nj) == 128) {
+				edges(ni, nj) = 255;
+				Q.push(Point(nj, ni));
+
+			}
+		}
+	}
+	for (int i = 0; i < edges.rows; i++) {
+		for (int j = 0; j < edges.cols; j++) {
+			if (edges(i, j) == 128) {
+				edges(i, j) = 0; 
+			}
+		}
+	}
+
+	return edges;
+
+}
 void main() {
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_FATAL);
-	//-------------------------Lab10
-	//median
-	Mat_<uchar> img = imread("Images/portrait_Salt&Pepper1.bmp", IMREAD_GRAYSCALE);
-	imshow("Original Image", img);
-	waitKey(0); 
-	Mat_<uchar> mf = median_filter(img,3);
-	imshow("Median Filtered Image", mf);
+	//-------------------------Lab11
+	 
+	Mat_<uchar> img = imread("Images/saturn.bmp", IMREAD_GRAYSCALE);
+	Mat_<uchar> mt = canny_edge_detection(img);
+	imshow("Mag T", mt);
+	waitKey(0);
+	int t1 = 100;
+	int t2 = 170;
+	Mat_<uchar> edges = edge_linking(mt, t1, t2);
+	imshow("Edges", edges);
 	waitKey(0);
 	
-	////gaussian
-	Mat_<uchar> img2 = imread("Images/portrait_Gauss2.bmp", IMREAD_GRAYSCALE);
-	imshow("Original Image2", img2);
-	waitKey(0);
-	Mat_<uchar> gs = gaussian_2D(img2, 5);
-	imshow("Gaussian 2D Image", gs);
-	waitKey(0);
-	//1D
-	Mat_<uchar> img3 = imread("Images/portrait_Gauss1.bmp", IMREAD_GRAYSCALE);
-	imshow("Original Image3", img3);
-	waitKey(0);
-	Mat_<uchar> forx = gaussian_1D(img3, 5,1);
-	Mat_<uchar> fory = gaussian_1D(forx, 5, 0);
-	imshow("Gaussian 1D Image", fory);
-	waitKey(0);
+		//-------------------------Lab10
+	//median
+	//Mat_<uchar> img = imread("Images/portrait_Salt&Pepper1.bmp", IMREAD_GRAYSCALE);
+	//imshow("Original Image", img);
+	//waitKey(0); 
+	//Mat_<uchar> mf = median_filter(img,3);
+	//imshow("Median Filtered Image", mf);
+	//waitKey(0);
+	//
+	//////gaussian
+	//Mat_<uchar> img2 = imread("Images/portrait_Gauss2.bmp", IMREAD_GRAYSCALE);
+	//imshow("Original Image2", img2);
+	//waitKey(0);
+	//Mat_<uchar> gs = gaussian_2D(img2, 5);
+	//imshow("Gaussian 2D Image", gs);
+	//waitKey(0);
+	////1D
+	//Mat_<uchar> img3 = imread("Images/portrait_Gauss1.bmp", IMREAD_GRAYSCALE);
+	//imshow("Original Image3", img3);
+	//waitKey(0);
+	//Mat_<uchar> forx = gaussian_1D(img3, 5,1);
+	//Mat_<uchar> fory = gaussian_1D(forx, 5, 0);
+	//imshow("Gaussian 1D Image", fory);
+	//waitKey(0);
 	//-------------------------Lab_9.1
 	/*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
 	Mat_<float> mean_filter = (Mat_<double>(3, 3) << 1, 1, 1, 1, 1, 1, 1, 1, 1);
