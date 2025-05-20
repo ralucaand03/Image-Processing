@@ -1,4 +1,5 @@
-// OpenCVApplication.cpp : Defines the entry point for the console application.
+//Andronescu Raluca
+//Image Processing Laboratory
 #include "stdafx.h"
 #include "common.h"
 #include <opencv2/core/utils/logger.hpp>
@@ -16,7 +17,7 @@
 using namespace std;
 using namespace cv;
 wchar_t* projectPath;
-//Lab_1
+//Lab_1 -- Colocviu 1
 void negative_image() {
 	Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE); // if u don t put IMREAD GRAYSCALE it will be 3 times wide
 	for (int i = 0; i < img.rows; i++) {
@@ -938,7 +939,7 @@ void reconstructs(Point start, vector<int> chain) {
 	waitKey(0);
 
 }
-//Lab7
+//Lab7 -- Colocviu 2
 Mat_<uchar> dilation(Mat_<uchar> src, Mat_<uchar> str_el) {
 	Mat_<uchar> dst = src.clone();
 
@@ -964,30 +965,35 @@ Mat_<uchar> dilation(Mat_<uchar> src, Mat_<uchar> str_el) {
 	return dst;
 }
 Mat_<uchar> erosion(Mat_<uchar> src, Mat_<uchar> str_el) {
-	 Mat_<uchar> dst = src.clone();
+	Mat_<uchar> dst = src.clone(); 
+	for (int i = 0; i < src.rows; i++) {
+		for (int j = 0; j < src.cols; j++) {
+			if (src(i, j) == 0) {  // only check black pixels
+				bool erode = false;
 
-	 for (int i = 0; i < src.rows; i++) {
-		 for (int j = 0; j < src.cols; j++) {
-			 bool fits = true;
-			 for (int u = 0; u < str_el.rows; u++) {
-				 for (int v = 0; v < str_el.cols; v++) {
-					 if (str_el(u, v) == 0) {
-						 int new_i = i + u - str_el.rows / 2;
-						 int new_j = j + v - str_el.cols / 2;
-						 if (!isInside(src, new_i, new_j) || src(new_i, new_j) != 0) {
-							 fits = false;
-							 break;
-						 }
-					 }
-				 }
-				 if (!fits) break;
-			 }
-			 if (fits)
-				 dst(i, j) = 0;
-		 }
-	 }
-	 return dst;
- }
+				for (int u = 0; u < str_el.rows; u++) {
+					for (int v = 0; v < str_el.cols; v++) {
+						if (str_el(u, v) == 0) {
+							int new_i = i + u - str_el.rows / 2;
+							int new_j = j + v - str_el.cols / 2;
+							// if outside OR white under the kernel → erode!
+							if (!isInside(src, new_i, new_j) || src(new_i, new_j) == 255) {
+								erode = true;
+								break;
+							}
+						}
+					}
+					if (erode) break;
+				} 
+				// if erosion needed, remove the pixel (make it white)
+				if (erode)
+					dst(i, j) = 255;
+			}
+		}
+	}
+
+	return dst;
+}
 //Lab8
 float mean(Mat_<uchar>& img) {
 	int M = img.rows * img.cols;
@@ -1003,8 +1009,7 @@ float standard_deviation(Mat_<uchar>& img, float mean_intensity) {
 	int M = img.rows * img.cols;
 	float result = 0;
 	vector<int> histo = calc_hist(img);
-	for (int i = 0; i < histo.size(); i++)
-	{
+	for (int i = 0; i < histo.size(); i++){
 		result += (((i - mean_intensity) * (i - mean_intensity) * histo[i]) * 1.0);
 	}
 	result = (result / (M * 1.0));
@@ -1023,12 +1028,10 @@ vector<int> cumulative_histogram(Mat_<uchar>& img) {
 	return cpdf;
 }
 Mat_<uchar>  thresholding(Mat_<uchar>& img) {
-
+  //🔵Step 1: Find intensity range
 	int i_min = INT_MAX;
 	int i_max = INT_MIN;
-
 	vector<int>  histo = calc_hist(img);
-
 	for (int i = 0; i <  histo.size(); i++)
 	{
 		if ( histo[i] > 0)
@@ -1037,75 +1040,61 @@ Mat_<uchar>  thresholding(Mat_<uchar>& img) {
 			i_max = max(i_max, i);
 		}
 	}
+	
+	//🔵 Step 2: Initialize threshold
 	float T = (i_min + i_max) / 2.0;
 	float last_T = 0;
-
+	
+  //🔵Step 3: Iteratively find the best threshold
 	while (1) {
 		float m1 = 0, m2 = 0, n1 = 0, n2 = 0;
-
-
-		for (int i = i_min; i <= i_max; i++)
-		{
-			if (i < T)
-			{
+		for (int i = i_min; i <= i_max; i++){
+			if (i < T){
 				m1 += ( histo[i] * i);
 				n1 += histo[i];
-			}
-			else
-			{
+			}	else {
 				m2 += (histo[i] * i);
 				n2 +=histo[i];
 			}
 		}
-
 		m1 = m1 / n1;
 		m2 = m2 / n2;
 		last_T = T;
 		T = (m1 + m2) / 2.0;
-
 		if (abs(T - last_T) <= 0.0) {
 			break;
 		}
 	}
-
+	
+  //🔵 Step 4: Apply threshold to image
 	Mat_<uchar> result(img.size(), uchar(255));
-	for (int i = 0; i < img.rows; i++)
-	{
-		for (int j = 0; j < img.cols; j++)
-		{
-			if (img(i, j) < T)
-			{
+	for (int i = 0; i < img.rows; i++){
+		for (int j = 0; j < img.cols; j++){
+			if (img(i, j) < T){
 				result(i, j) = 0;
-			}
-			else
-			{
+			}	else {
 				result(i, j) = 255;
 			}
 		}
 	}
+	
 	return result;
 }
 Mat_<uchar> histogram_stretching_shrinking(Mat_<uchar>& img, int min_val, int max_val) {
 	Mat_<uchar> result(img.size(), uchar(255));
-
+	//🔵Step 1: Find intensity min and max
 	int i_min = INT_MAX;
 	int i_max = INT_MIN;
-
 	vector<int> histo = calc_hist(img);
-
-	for (int i = 0; i <  histo.size(); i++)
-	{
-		if ( histo[i] > 0)
-		{
+	for (int i = 0; i < histo.size(); i++) {
+		if (histo[i] > 0) {
 			i_min = min(i_min, i);
 			i_max = max(i_max, i);
 		}
 	}
-
-	for (int i = 0; i < img.rows; i++)
-	{
-		for (int j = 0; j < img.cols; j++)
-		{
+	//🔵Step 2: Map each pixel to the new range
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
 			result(i, j) = ((img(i, j) - i_min) * (max_val - min_val)) / (i_max - i_min) + min_val;
 		}
 	}
@@ -1133,7 +1122,6 @@ Mat_<float> convolution(Mat_<uchar> img, Mat_<float> H) {
 	} 
 	return dst;
 }
-
 Mat_<uchar> normalization(Mat_<float> img, Mat_<float> H) {
 	Mat_<uchar> dst(img.rows, img.cols);
 	float pos = 0, neg = 0;
@@ -1242,7 +1230,7 @@ Mat generic_frequency_domain_filter(Mat src,int x) {
 	//dstf.convertTo(dst, CV_8UC1);
 	return dst;
 }
-//Lab 10. Noise modeling and digital image filtering
+//Lab10 
 Mat_<uchar >median_filter(Mat_<uchar> img,int w) {
 	double t = (double)getTickCount();
 	Mat_ <uchar>  dst(img.rows, img.cols);
@@ -1267,7 +1255,6 @@ Mat_<uchar >median_filter(Mat_<uchar> img,int w) {
 	printf("Time for Median Filtered = %.3f [ms]\n", t * 1000);
 	return dst;
 }
-
 Mat_< uchar> gaussian_2D(Mat_<uchar> img,int w) {
 	double t = (double)getTickCount();
 	Mat_<uchar> result = img.clone(); 
@@ -1324,7 +1311,7 @@ Mat_<uchar> gaussian_1D(Mat_<uchar> img,int w, int x) {
 	printf("Time for Gaussian 1D = %.3f [ms]\n", t * 1000);
 	return result;
 }
-//Lab 11
+//Lab11
 Mat_ <uchar> canny_edge_detection(Mat_<uchar> img)  {
 	Mat_<float> sk_x = (Mat_<float>(3, 3) << -1, 0, 1, -2, 0, 2, -1, 0, 1);
 	Mat_<float> sk_y = (Mat_<float>(3, 3) << 1, 2, 1, 0, 0, 0, -1, -2, -1);
@@ -1431,7 +1418,7 @@ Mat_<uchar> edge_linking(Mat_<uchar> mt, int t1, int t2) {
 void main() {
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_FATAL);
 	//-------------------------Lab11
-	 
+	/*
 	Mat_<uchar> img = imread("Images/saturn.bmp", IMREAD_GRAYSCALE);
 	Mat_<uchar> mt = canny_edge_detection(img);
 	imshow("Mag T", mt);
@@ -1441,31 +1428,31 @@ void main() {
 	Mat_<uchar> edges = edge_linking(mt, t1, t2);
 	imshow("Edges", edges);
 	waitKey(0);
-	
-		//-------------------------Lab10
+	*/
+	//-------------------------Lab10
+	/*
 	//median
-	//Mat_<uchar> img = imread("Images/portrait_Salt&Pepper1.bmp", IMREAD_GRAYSCALE);
-	//imshow("Original Image", img);
-	//waitKey(0); 
-	//Mat_<uchar> mf = median_filter(img,3);
-	//imshow("Median Filtered Image", mf);
-	//waitKey(0);
-	//
-	//////gaussian
-	//Mat_<uchar> img2 = imread("Images/portrait_Gauss2.bmp", IMREAD_GRAYSCALE);
-	//imshow("Original Image2", img2);
-	//waitKey(0);
-	//Mat_<uchar> gs = gaussian_2D(img2, 5);
-	//imshow("Gaussian 2D Image", gs);
-	//waitKey(0);
-	////1D
-	//Mat_<uchar> img3 = imread("Images/portrait_Gauss1.bmp", IMREAD_GRAYSCALE);
-	//imshow("Original Image3", img3);
-	//waitKey(0);
-	//Mat_<uchar> forx = gaussian_1D(img3, 5,1);
-	//Mat_<uchar> fory = gaussian_1D(forx, 5, 0);
-	//imshow("Gaussian 1D Image", fory);
-	//waitKey(0);
+	Mat_<uchar> img = imread("Images/portrait_Salt&Pepper1.bmp", IMREAD_GRAYSCALE);
+	imshow("Original Image", img);
+	waitKey(0); 
+	Mat_<uchar> mf = median_filter(img,3);
+	imshow("Median Filtered Image", mf);
+	waitKey(0);
+	//gaussian2D
+	Mat_<uchar> img2 = imread("Images/portrait_Gauss2.bmp", IMREAD_GRAYSCALE);
+	imshow("Original Image2", img2);
+	waitKey(0);
+	Mat_<uchar> gs = gaussian_2D(img2, 5);
+	imshow("Gaussian 2D Image", gs);
+	waitKey(0);
+	//1D
+	Mat_<uchar> img3 = imread("Images/portrait_Gauss1.bmp", IMREAD_GRAYSCALE);
+	imshow("Original Image3", img3);
+	waitKey(0);
+	Mat_<uchar> forx = gaussian_1D(img3, 5,1);
+	Mat_<uchar> fory = gaussian_1D(forx, 5, 0);
+	imshow("Gaussian 1D Image", fory);
+	waitKey(0);*/
 	//-------------------------Lab_9.1
 	/*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
 	Mat_<float> mean_filter = (Mat_<double>(3, 3) << 1, 1, 1, 1, 1, 1, 1, 1, 1);
@@ -1480,7 +1467,7 @@ void main() {
 	conv_res = convolution(img, mean_filter5);
 	Mat_<uchar> new_img = normalization(conv_res, mean_filter5);
 	imshow("Original Image", img);
-	imshow("Mean Filtered Image 5x5", new_img);
+	imshow("Mean Filtered 5x5", new_img);
 	waitKey(0); 
 
 	Mat_<float> gaussian_filter = (Mat_<double>(3, 3) << 1, 2, 1, 2, 4, 2, 1, 2, 1);
@@ -1508,7 +1495,7 @@ void main() {
 	new_img = normalization(conv_res, high_pass_filter);
 	imshow("Original Image", img);
 	imshow("High Pass Filtered Image", new_img);
-	waitKey(0);*/
+	waitKey(0); */
 	//-------------------------Lab_9.2
 	/*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
 	auto dst = generic_frequency_domain_filter(img,1);
@@ -1518,119 +1505,124 @@ void main() {
 	waitKey(0);*/
 	//-------------------------Lab_8
 	/*Mat_<uchar> img = imread("Images/balloons.bmp", IMREAD_GRAYSCALE);
-
 	float mean_intensity = mean(img);
-	cout << "Mean intensity: " << mean_intensity << endl;
-
+	cout << "Mean intensity: " << mean_intensity << endl; 
 	float standarddev= standard_deviation(img, mean_intensity);
 	cout << "Standard Deviation: " << standarddev << endl;
-
 	vector<int> cumulative = cumulative_histogram(img);
 	showHistogram("cumulative_histogram", cumulative, 256, 400);
 	waitKey(0);
-
 	Mat_<uchar> img2 = imread("Images/eight.bmp", IMREAD_GRAYSCALE);
 	imshow("Image before thresholding", img2);
 	waitKey(0);
 	Mat_<uchar> img_result = thresholding(img2);
 	imshow("Image after thresholding", img_result);
+	waitKey(0);
+	Mat_<uchar> s1 = imread("Images/Hawkes_Bay_NZ.bmp", IMREAD_GRAYSCALE);
+	Mat_<uchar> s11  = histogram_stretching_shrinking(s1, 50, 200);
+	Mat s1_resized, s11_resized;
+	resize(s1, s1_resized, Size(), 0.5, 0.5);     // 50% scale
+	resize(s11, s11_resized, Size(), 0.5, 0.5);
+	imshow("original1", s1_resized);
+	imshow("stretching", s11_resized);
+	waitKey(0);
+	Mat_<uchar> s2 = imread("Images/wheel.bmp", IMREAD_GRAYSCALE);
+	Mat_<uchar> s22 = histogram_stretching_shrinking(s2, 50, 200);
+	imshow("original2 ", s2);
+	imshow("shrinking", s22);
 	waitKey(0);*/
 	//-------------------------Lab_7
-	//Mat_<uchar> img = imread("Images/1_Dilate/wdg2ded1_bw.bmp", IMREAD_GRAYSCALE);
-	//uchar data[] = {
-	//	255,   0, 255,
-	//	  0,   0,   0,
-	//	255,   0,   0
-	//};
-	//Mat_<uchar> str_el(3, 3, data);
-
-	//Mat_<uchar> img2 = dilation(img, str_el);
-	//imshow("Dilation", img2);
-	//waitKey(0);
-	//Mat_<uchar> img3 = erosion(img2, str_el);
-	//imshow("Erosion", img3);
-	//waitKey(0);
+	/*Mat_<uchar> img = imread("Images/1_Dilate/wdg2ded1_bw.bmp", IMREAD_GRAYSCALE);
+	uchar data[] = {
+		255,   0, 255,
+		  0,   0,   0,
+		255,   0,   0
+	};
+	Mat_<uchar> str_el(3, 3, data);
+	Mat_<uchar> img2 = dilation(img, str_el);
+	imshow("Original", img );
+	imshow("Dilation", img2);
+	waitKey(0);
+	Mat_<uchar> img3 = erosion(img2, str_el);
+	imshow("Erosion", img3);
+	waitKey(0);*/
 	////------------------------Lab_6
-	// Mat_<uchar> img = imread("Images/triangle_up.bmp", IMREAD_GRAYSCALE);
-	// if (img.empty())
-	// {
-	// 	cerr << "Could not open or find the image!\n";
-	// 	return;
-	// }
-	// imshow("image", img);
-	// waitKey(0);
-	// vector<Point> contour = borderTrace(img);
-	// Mat_<Vec3b> colorImg;
-	// cvtColor(img, colorImg, COLOR_GRAY2BGR);
-	// for (Point pt : contour)
-	// 	colorImg(pt.y, pt.x) = Vec3b(0, 0, 255);
-	// imshow("Traced Border", colorImg);
-	// waitKey(0);
-	// vector<int> chain = buildChainCode(contour);
-	// cout<<"Chain Code: "<<"\n";
-	// printVector(chain);
-	// vector<int> der = buildDerivativeCode(chain);
-	// cout << "Derivative Code: " << "\n";
-	// printVector(der);
-	// Point start;
-	// vector<int> chain_rec;
-	// readChainCode("Images/reconstruct.txt", start, chain_rec);
-	// reconstructs(start, chain_rec);
-
+	/*
+	 Mat_<uchar> img = imread("Images/triangle_up.bmp", IMREAD_GRAYSCALE);
+	 if (img.empty())
+	 {
+	 	cerr << "Could not open or find the image!\n";
+	 	return;
+	 }
+	 imshow("image", img);
+	 waitKey(0);
+	 vector<Point> contour = borderTrace(img);
+	 Mat_<Vec3b> colorImg;
+	 cvtColor(img, colorImg, COLOR_GRAY2BGR);
+	 for (Point pt : contour)
+	 	colorImg(pt.y, pt.x) = Vec3b(0, 0, 255);
+	 imshow("Traced Border", colorImg);
+	 waitKey(0);
+	 vector<int> chain = buildChainCode(contour);
+	 cout<<"Chain Code: "<<"\n";
+	 printVector(chain);
+	 vector<int> der = buildDerivativeCode(chain);
+	 cout << "Derivative Code: " << "\n";
+	 printVector(der);
+	 Point start;
+	 vector<int> chain_rec;
+	 readChainCode("Images/reconstruct.txt", start, chain_rec);
+	 reconstructs(start, chain_rec);
+	*/
 	////------------------------Lab_5
-	//Mat_<uchar> img = imread("Images/shapes.bmp", IMREAD_GRAYSCALE);
-	//Mat_<int> labels = Mat::zeros(img.size(), CV_32SC1);
-	//imshow("img", img);
-	//waitKey(0);
-	////
-	//two_pass(img, labels,8);
-	//bfs(img, labels, 8);
-	//dfs(img, labels, 8);
-	//bfs_visualize(img, labels, 8);
-
+	/*Mat_<uchar> img = imread("Images/shapes.bmp", IMREAD_GRAYSCALE);
+	Mat_<int> labels = Mat::zeros(img.size(), CV_32SC1);
+	imshow("img", img);
+	waitKey(0); 
+	two_pass(img, labels,8);
+	bfs(img, labels, 8);
+	dfs(img, labels, 8);
+	bfs_visualize(img, labels, 8);*/
 	////------------------------Lab_4
-	//loadAndSetupImage("Images/oval_obl.bmp");
-	//waitKey(0);
-
+	/*loadAndSetupImage("Images/oval_obl.bmp");
+	waitKey(0);*/
 	////------------------------Lab_3
-	 //Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
-	 //if (img.empty()) return;
-	 //Mat_<Vec3b> colorimg = imread("Images/Lena_24bits.bmp");
-	 //imshow("Original", img);
-	 //*vector<int> hist = calc_hist(img);
-	 //showHistogram("Histogram", hist, 256, 400);
-	 //waitKey(0);
-	 //int m = 128; 
-	 //vector<int> custom_hist = hist_custom_bins(img, m);
-	 //showHistogram("Custom Bins", hist, 100, 300);
-	 //waitKey(0);*/
-	 //Mat simplified = multilevel_thresholding(img);
-	 //imshow("Multilevel Thresholding", simplified);
-	 //waitKey(0);
-	 //Mat hue = multilevel_thresholding(colorimg);
-	 //imshow("Multilevel Thresholding", hue);
-	 //waitKey(0);
-
+	 /*Mat_<uchar> img = imread("Images/cameraman.bmp", IMREAD_GRAYSCALE);
+	 if (img.empty()) return;
+	 Mat_<Vec3b> colorimg = imread("Images/Lena_24bits.bmp");
+	 imshow("Original", img);
+	 vector<int> hist = calc_hist(img);
+	 showHistogram("Histogram", hist, 256, 400);
+	 waitKey(0);
+	 int m = 128; 
+	 vector<int> custom_hist = hist_custom_bins(img, m);
+	 showHistogram("Custom Bins", hist, 100, 300);
+	 waitKey(0); 
+	 Mat simplified = multilevel_thresholding(img);
+	 imshow("Multilevel Thresholding", simplified);
+	 waitKey(0);
+	 Mat hue = multilevel_thresholding(colorimg);
+	 imshow("Multilevel Thresholding", hue);
+	 waitKey(0);*/
 	////------------------------Lab_2
-	//split_channels();
-	//convert_to_grayscale();
-	//convert_grayscale_to_BW();
-	//Mat_<Vec3b> img = imread("Images/Lena_24bits.bmp");
-	//imshow("Original", img);
-	//waitKey(0);
-	//Mat_<Vec3b> hsvimg = computeHSV(img);
-	//imshow("HSV", hsvimg);
-	//waitKey(0);
-	//Mat_<Vec3b> rgbimg(hsvimg.rows, hsvimg.cols);
-	//cvtColor(hsvimg, rgbimg, COLOR_HSV2BGR);
-	//imshow("RGB", rgbimg);
-	//waitKey(0);
-
+	/*split_channels();
+	convert_to_grayscale();
+	convert_grayscale_to_BW();
+	Mat_<Vec3b> img = imread("Images/Lena_24bits.bmp");
+	imshow("Original", img);
+	waitKey(0);
+	Mat_<Vec3b> hsvimg = computeHSV(img);
+	imshow("HSV", hsvimg);
+	waitKey(0);
+	Mat_<Vec3b> rgbimg(hsvimg.rows, hsvimg.cols);
+	cvtColor(hsvimg, rgbimg, COLOR_HSV2BGR);
+	imshow("RGB", rgbimg);
+	waitKey(0);*/
 	////------------------------Lab_1
-	// negative_image();
-	// additive_factor(15);
-	// multiplicative_factor(15);
-	// create_img();
-	// create3x3float();
-	// symethric_img();
+	/*negative_image();
+	 additive_factor(15);
+	 multiplicative_factor(15);
+	 create_img();
+	 create3x3float();
+	 symethric_img();*/
 }
